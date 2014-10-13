@@ -5,6 +5,8 @@ import java.util.List;
 
 public class StingCollection {
 	private List<Sting> stings;
+	private long newestTimestamp;
+	private long oldestTimestamp;
 
 	public StingCollection() {
 		super();
@@ -21,5 +23,21 @@ public class StingCollection {
 
 	public void addSting(Sting sting) {
 		stings.add(sting);
+	}
+
+	public long getNewestTimestamp() {
+		return newestTimestamp;
+	}
+
+	public void setNewestTimestamp(long newestTimestamp) {
+		this.newestTimestamp = newestTimestamp;
+	}
+
+	public long getOldestTimestamp() {
+		return oldestTimestamp;
+	}
+
+	public void setOldestTimestamp(long oldestTimestamp) {
+		this.oldestTimestamp = oldestTimestamp;
 	}
 }

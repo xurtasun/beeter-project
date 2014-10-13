@@ -53,6 +53,11 @@
         	<artifactId>mysql-connector-java</artifactId>
         	<version>5.1.33</version>
         </dependency>
+        <dependency>
+        	<groupId>org.glassfish.jersey.ext</groupId>
+        	<artifactId>jersey-declarative-linking</artifactId>
+        	<version>2.13</version>
+        </dependency>
     </dependencies>
     <properties>
         <jersey.version>2.13</jersey.version>

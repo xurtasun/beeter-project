@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
@@ -25,12 +26,16 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 
 import edu.upc.eetac.dsa.smachado.beeter.api.model.Sting;
 import edu.upc.eetac.dsa.smachado.beeter.api.model.StingCollection;
 
 @Path("/stings")
 public class StingResource {
+	
+	@Context
+	private SecurityContext security;
 	
 	private DataSource ds = DataSourceSPA.getInstance().getDataSource();
 	
@@ -193,13 +198,16 @@ public class StingResource {
 			throw new ServerErrorException("Could not connect to the database",
 					Response.Status.SERVICE_UNAVAILABLE);
 		}
+		
+		
 		validateSting(sting);
 		PreparedStatement stmt = null;
 		try {
 			stmt = conn.prepareStatement(INSERT_STING_QUERY,
 					Statement.RETURN_GENERATED_KEYS);
 
-			stmt.setString(1, sting.getUsername());
+			//stmt.setString(1, sting.getUsername());
+			stmt.setString(1, security.getUserPrincipal().getName());
 			stmt.setString(2, sting.getSubject());
 			stmt.setString(3, sting.getContent());
 			stmt.executeUpdate();
@@ -238,7 +246,7 @@ public class StingResource {
 			throw new ServerErrorException("Could not connect to the database",
 					Response.Status.SERVICE_UNAVAILABLE);
 		}
-
+		validateUser(stingid);
 		PreparedStatement stmt = null;
 		try {
 			stmt = conn.prepareStatement(DELETE_STING_QUERY);
@@ -275,6 +283,7 @@ public class StingResource {
 					Response.Status.SERVICE_UNAVAILABLE);
 		}
 		validateUpdateSting(sting);
+		validateUser(stingid);
 		PreparedStatement stmt = null;
 		try {
 			stmt = conn.prepareStatement(UPDATE_STING_QUERY);
@@ -327,6 +336,15 @@ public class StingResource {
 		if (sting.getContent() != null && sting.getContent().length() > 500)
 			throw new BadRequestException(
 					"Content can't be greater than 500 characters.");
+	}
+	
+	private void validateUser(String stingid) {
+	    Sting sting = getStingFromDatabase(stingid);
+	    String username = sting.getUsername();
+		if (!security.getUserPrincipal().getName()
+				.equals(username))
+			throw new ForbiddenException(
+					"You are not allowed to modify this sting.");
 	}
 }
 

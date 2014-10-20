@@ -69,7 +69,7 @@ public class StingResource {
 					stmt.setTimestamp(1, new Timestamp(before));
 				else
 					stmt.setTimestamp(1, null);
-				length = (length <= 0) ? 5 : length;
+				length = (length <= 0) ? 5 : length;// si lenght menor a 0 coge valor a 5 sino coge valor por defecto de lenght
 				stmt.setInt(2, length);
 			}
 			ResultSet rs = stmt.executeQuery();
@@ -104,6 +104,107 @@ public class StingResource {
 
 		return stings;
 	}
+	
+	
+	
+	private String GET_STINGS_QUERY_SUBJECT = "select s.*, u.name from stings s, users u where u.username=s.username and s.subject=?";
+	private String GET_STINGS_QUERY_CONTENT = "select s.*, u.name from stings s, users u where u.username=s.username and s.content=?";
+
+	
+	@GET
+	@Path("/search")
+	@Produces(MediaType.BEETER_API_STING_COLLECTION)
+	public StingCollection getStingsParametros(@QueryParam("subject") String subject,
+			@QueryParam("content") String content, @QueryParam("lenght") int lenght) {
+		StingCollection stings = new StingCollection();
+
+		Connection conn = null;
+		try {
+			conn = ds.getConnection();
+		} catch (SQLException e) {
+			throw new ServerErrorException("Could not connect to the database",
+					Response.Status.SERVICE_UNAVAILABLE);
+		}
+
+		PreparedStatement stmt = null;
+		
+		try{
+			if (subject!= null){
+				try {
+					stmt = conn.prepareStatement(GET_STINGS_QUERY_SUBJECT);
+					stmt.setInt(1, Integer.valueOf(subject));
+					ResultSet rs = stmt.executeQuery();
+					boolean first = true;
+					long oldestTimestamp = 0;
+					int contador = 0;
+					while (rs.next()&contador<lenght) {
+							Sting sting = new Sting();
+							sting.setStingid(rs.getInt("stingid"));
+							sting.setUsername(rs.getString("username"));
+							sting.setAuthor(rs.getString("name"));
+							sting.setSubject(rs.getString("subject"));
+							oldestTimestamp = rs.getTimestamp("last_modified").getTime();
+							sting.setLastModified(oldestTimestamp);
+							if (first) {
+								first = false;
+								stings.setNewestTimestamp(sting.getLastModified());
+							}
+							stings.addSting(sting);
+					}
+				}
+				catch (SQLException e) {
+					throw new ServerErrorException(e.getMessage(),
+							Response.Status.INTERNAL_SERVER_ERROR);
+				} 
+			}
+			if (content!= null){	
+				try {
+					stmt = conn.prepareStatement(GET_STINGS_QUERY_CONTENT);
+					stmt.setInt(1, Integer.valueOf(subject));
+					ResultSet rs = stmt.executeQuery();
+					boolean first = true;
+					long oldestTimestamp = 0;
+					int contador = 0;
+					while (rs.next()&contador<lenght) {
+							Sting sting = new Sting();
+							sting.setStingid(rs.getInt("stingid"));
+							sting.setUsername(rs.getString("username"));
+							sting.setAuthor(rs.getString("name"));
+							sting.setSubject(rs.getString("subject"));
+							oldestTimestamp = rs.getTimestamp("last_modified").getTime();
+							sting.setLastModified(oldestTimestamp);
+							if (first) {
+								first = false;
+								stings.setNewestTimestamp(sting.getLastModified());
+							}
+							stings.addSting(sting);
+					}
+				}
+				catch (SQLException e) {
+					throw new ServerErrorException(e.getMessage(),
+							Response.Status.INTERNAL_SERVER_ERROR);
+				}finally{
+					try {
+						if (stmt != null)
+							stmt.close();
+						conn.close();
+					} catch (SQLException e) {
+					}
+				}
+			}
+		}finally {
+					try {
+						if (stmt != null)
+							stmt.close();
+						conn.close();
+					} catch (SQLException e) {
+					}
+				}
+		
+
+		return stings;
+	}
+	
 	
 	private String GET_STING_BY_ID_QUERY = "select s.*, u.name from stings s, users u where u.username=s.username and s.stingid=?";
 

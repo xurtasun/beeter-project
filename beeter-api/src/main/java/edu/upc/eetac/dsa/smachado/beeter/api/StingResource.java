@@ -75,6 +75,8 @@ public class StingResource {
 			ResultSet rs = stmt.executeQuery();
 			boolean first = true;
 			long oldestTimestamp = 0;
+			long creationTimestamp = 0;
+
 			while (rs.next()) {
 				Sting sting = new Sting();
 				sting.setStingid(rs.getInt("stingid"));
@@ -82,6 +84,8 @@ public class StingResource {
 				sting.setAuthor(rs.getString("name"));
 				sting.setSubject(rs.getString("subject"));
 				oldestTimestamp = rs.getTimestamp("last_modified").getTime();
+				creationTimestamp = rs.getTimestamp("creation_timestamp").getTime();
+				sting.setCreationTimestamp(creationTimestamp);
 				sting.setLastModified(oldestTimestamp);
 				if (first) {
 					first = false;
@@ -150,6 +154,8 @@ public class StingResource {
 				ResultSet rs = stmt.executeQuery();
 				boolean first = true;
 				long oldestTimestamp = 0;
+				long creationTimestamp = 0;
+
 				int i=0;
 				while(rs.next() && i< length){
 					
@@ -161,6 +167,8 @@ public class StingResource {
 					sting.setAuthor(rs.getString("name"));
 					sting.setSubject(rs.getString("subject"));
 					oldestTimestamp = rs.getTimestamp("last_modified").getTime();
+					creationTimestamp = rs.getTimestamp("creation_timestamp").getTime();
+					sting.setCreationTimestamp(creationTimestamp);
 					sting.setLastModified(oldestTimestamp);
 					if (first) {
 						first = false;
@@ -169,9 +177,7 @@ public class StingResource {
 					stings.addSting(sting);
 					i++;
 				}
-			
-							
-					
+				stings.setOldestTimestamp(oldestTimestamp);		
 		}
 		catch (SQLException e) {
 			throw new ServerErrorException(e.getMessage(),

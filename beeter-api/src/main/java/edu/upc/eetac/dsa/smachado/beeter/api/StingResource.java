@@ -267,7 +267,6 @@ public class StingResource {
 
 		return rb.build();
 	}
-	//a
 	
 	private String INSERT_STING_QUERY = "insert into stings (username, subject, content) value (?, ?, ?)";
 

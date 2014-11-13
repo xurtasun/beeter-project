@@ -106,16 +106,15 @@ public class StingResource {
 	}
 	
 	
-	
-	private String GET_STINGS_QUERY_SUBJECT = "select s.*, u.name from stings s, users u where u.username=s.username and s.subject=?";
-	private String GET_STINGS_QUERY_CONTENT = "select s.*, u.name from stings s, users u where u.username=s.username and s.content=?";
+	private String GET_STINGS_QUERY_CONTENT = " select s.*, u.name from stings s, users u where u.username=s.username and s.content=?";
+	private String GET_STINGS_QUERY_SUBJECT = " select s.*, u.name from stings s, users u where u.username=s.username and s.subject=?";
+	private String GET_STINGS_QUERY_SUBJECT_CONTENT = " select s.*, u.name from stings s, users u where u.username=s.username and s.subject=? and s.content=?";
 
-	
 	@GET
 	@Path("/search")
 	@Produces(MediaType.BEETER_API_STING_COLLECTION)
 	public StingCollection getStingsParametros(@QueryParam("subject") String subject,
-			@QueryParam("content") String content, @QueryParam("lenght") int lenght) {
+			@QueryParam("content") String content, @QueryParam ("lenght") int length) {
 		StingCollection stings = new StingCollection();
 
 		Connection conn = null;
@@ -125,74 +124,61 @@ public class StingResource {
 			throw new ServerErrorException("Could not connect to the database",
 					Response.Status.SERVICE_UNAVAILABLE);
 		}
-
+		
+		System.out.println(subject);
+		System.out.println(content);
+		
+		System.out.println("creamos statment");
 		PreparedStatement stmt = null;
 		
 		try{
-			if (subject!= null){
-				try {
-					stmt = conn.prepareStatement(GET_STINGS_QUERY_SUBJECT);
-					stmt.setInt(1, Integer.valueOf(subject));
-					ResultSet rs = stmt.executeQuery();
-					boolean first = true;
-					long oldestTimestamp = 0;
-					int contador = 0;
-					while (rs.next()&contador<lenght) {
-							Sting sting = new Sting();
-							sting.setStingid(rs.getInt("stingid"));
-							sting.setUsername(rs.getString("username"));
-							sting.setAuthor(rs.getString("name"));
-							sting.setSubject(rs.getString("subject"));
-							oldestTimestamp = rs.getTimestamp("last_modified").getTime();
-							sting.setLastModified(oldestTimestamp);
-							if (first) {
-								first = false;
-								stings.setNewestTimestamp(sting.getLastModified());
-							}
-							stings.addSting(sting);
-					}
-				}
-				catch (SQLException e) {
-					throw new ServerErrorException(e.getMessage(),
-							Response.Status.INTERNAL_SERVER_ERROR);
-				} 
+			
+			if(content==null){
+				stmt = conn.prepareStatement(GET_STINGS_QUERY_SUBJECT);
+				stmt.setString(1, subject);
 			}
-			if (content!= null){	
-				try {
-					stmt = conn.prepareStatement(GET_STINGS_QUERY_CONTENT);
-					stmt.setInt(1, Integer.valueOf(subject));
-					ResultSet rs = stmt.executeQuery();
-					boolean first = true;
-					long oldestTimestamp = 0;
-					int contador = 0;
-					while (rs.next()&contador<lenght) {
-							Sting sting = new Sting();
-							sting.setStingid(rs.getInt("stingid"));
-							sting.setUsername(rs.getString("username"));
-							sting.setAuthor(rs.getString("name"));
-							sting.setSubject(rs.getString("subject"));
-							oldestTimestamp = rs.getTimestamp("last_modified").getTime();
-							sting.setLastModified(oldestTimestamp);
-							if (first) {
-								first = false;
-								stings.setNewestTimestamp(sting.getLastModified());
-							}
-							stings.addSting(sting);
-					}
-				}
-				catch (SQLException e) {
-					throw new ServerErrorException(e.getMessage(),
-							Response.Status.INTERNAL_SERVER_ERROR);
-				}finally{
-					try {
-						if (stmt != null)
-							stmt.close();
-						conn.close();
-					} catch (SQLException e) {
-					}
-				}
+			else if(subject==null){
+				System.out.println(content);
+				stmt = conn.prepareStatement(GET_STINGS_QUERY_CONTENT);
+				stmt.setString(1, content);
 			}
-		}finally {
+			else{
+				stmt = conn.prepareStatement(GET_STINGS_QUERY_SUBJECT_CONTENT);
+				stmt.setString(1, subject);
+				stmt.setString(2, content);
+			}
+				ResultSet rs = stmt.executeQuery();
+				boolean first = true;
+				long oldestTimestamp = 0;
+				int i=0;
+				while(rs.next() && i< length){
+					
+					Sting sting = new Sting();
+					
+					sting.setStingid(rs.getInt("stingid"));
+					System.out.println(sting.getStingid());
+					sting.setUsername(rs.getString("username"));
+					sting.setAuthor(rs.getString("name"));
+					sting.setSubject(rs.getString("subject"));
+					oldestTimestamp = rs.getTimestamp("last_modified").getTime();
+					sting.setLastModified(oldestTimestamp);
+					if (first) {
+						first = false;
+						stings.setNewestTimestamp(sting.getLastModified());
+					}
+					stings.addSting(sting);
+					i++;
+				}
+			
+							
+					
+		}
+		catch (SQLException e) {
+			throw new ServerErrorException(e.getMessage(),
+					Response.Status.INTERNAL_SERVER_ERROR);
+		} 
+			
+		finally {
 					try {
 						if (stmt != null)
 							stmt.close();
@@ -204,12 +190,10 @@ public class StingResource {
 
 		return stings;
 	}
-	
-	
+		
+
 	private String GET_STING_BY_ID_QUERY = "select s.*, u.name from stings s, users u where u.username=s.username and s.stingid=?";
 
-
-	
 	private Sting getStingFromDatabase(String stingid) {
 		Sting sting = new Sting();
 
@@ -258,8 +242,7 @@ public class StingResource {
 	@GET
 	@Path("/{stingid}")
 	@Produces(MediaType.BEETER_API_STING)
-	public Response getSting(@PathParam("stingid") String stingid,
-			@Context Request request) {
+	public Response getSting(@PathParam("stingid") String stingid, @Context Request request) {
 		// Create CacheControl
 		CacheControl cc = new CacheControl();
 
@@ -418,7 +401,6 @@ public class StingResource {
 	@POST
 	@Consumes(MediaType.BEETER_API_STING)
 	@Produces(MediaType.BEETER_API_STING)
-
 	private void validateSting(Sting sting) {
 		if (sting.getSubject() == null)
 			throw new BadRequestException("Subject can't be null.");
